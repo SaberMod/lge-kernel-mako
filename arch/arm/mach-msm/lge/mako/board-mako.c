@@ -777,7 +777,6 @@ static struct msm_bus_scale_pdata hsic_bus_scale_pdata = {
 };
 
 static struct msm_hsic_host_platform_data msm_hsic_pdata = {
-	.log2_irq_thresh	= 5,
 	.strobe			= 88,
 	.data			= 89,
 	.bus_scale_table	= &hsic_bus_scale_pdata,
@@ -1152,10 +1151,16 @@ static struct platform_device msm_device_iris_fm __devinitdata = {
 /* qseecom bus scaling */
 static struct msm_bus_vectors qseecom_clks_init_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = 0,
 		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 0,
+		.ib = 0,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1167,10 +1172,16 @@ static struct msm_bus_vectors qseecom_clks_init_vectors[] = {
 
 static struct msm_bus_vectors qseecom_enable_dfab_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = (492 * 8) * 1000000UL,
-		.ab = (492 * 8) *  100000UL,
+		.ab = 70000000UL,
+		.ib = 70000000UL,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 2480000000UL,
+		.ib = 2480000000UL,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1182,10 +1193,16 @@ static struct msm_bus_vectors qseecom_enable_dfab_vectors[] = {
 
 static struct msm_bus_vectors qseecom_enable_sfpb_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = 0,
 		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 0,
+		.ib = 0,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1202,7 +1219,7 @@ static struct msm_bus_paths qseecom_hw_bus_scale_usecases[] = {
 	},
 	{
 		ARRAY_SIZE(qseecom_enable_dfab_vectors),
-		qseecom_enable_sfpb_vectors,
+		qseecom_enable_dfab_vectors,
 	},
 	{
 		ARRAY_SIZE(qseecom_enable_sfpb_vectors),
@@ -1861,7 +1878,7 @@ static struct platform_device *common_devices[] __initdata = {
 static struct platform_device *cdp_devices[] __initdata = {
 	&msm_device_sps_apq8064,
 #ifdef CONFIG_MSM_ROTATOR
-       &msm_rotator_device,
+	&msm_rotator_device,
 #endif
 };
 
@@ -2018,6 +2035,7 @@ static void __init apq8064_common_init(void)
 	rpmrs_level =
 		msm_rpmrs_levels[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE];
 	msm_hsic_pdata.standalone_latency = rpmrs_level.latency_us;
+	msm_hsic_pdata.log2_irq_thresh = 5,
 	apq8064_device_hsic_host.dev.platform_data = &msm_hsic_pdata;
 	device_initialize(&apq8064_device_hsic_host.dev);
 	apq8064_pm8xxx_gpio_mpp_init();
