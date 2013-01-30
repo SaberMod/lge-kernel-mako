@@ -188,15 +188,22 @@ static void mipi_lgit_set_backlight_board(struct msm_fb_data_type *mfd)
 
 static bool calc_checksum(int intArr[]) {
 	int i = 0;
-	unsigned char chksum = 0;
+	int chksum = 0;
+	int final = 9;
 
-	for (i=1; i<10; i++)
-		chksum += intArr[i];
+	if (intArr[5] > 31 || (intArr[6] > 31)) {
+		return false;
+	}
 
-	if (chksum == (unsigned char)intArr[0]) {
+	for (i=1; i<10; i++) {
+		if (intArr[i] < 256) {
+			chksum += 1;
+		}
+	}
+	
+	if (chksum == final) {
 		return true;
 	} else {
-		//pr_info("expecting %d, got this %d instead!", chksum, intArr[0]);
 		return false;
 	}
 }
