@@ -110,7 +110,7 @@ static u64 ehci_msm_hsic_dma_mask = DMA_BIT_MASK(32);
 
 static struct platform_driver ehci_msm_hsic_driver;
 
-static unsigned int enable_payload_log = 1;
+static unsigned int enable_payload_log = 0;
 module_param(enable_payload_log, uint, S_IRUGO | S_IWUSR);
 static unsigned int enable_dbg_log = 0;
 module_param(enable_dbg_log, uint, S_IRUGO | S_IWUSR);
