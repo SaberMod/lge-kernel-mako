@@ -351,10 +351,22 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   =
-AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
+MODFLAGS        = -DMODULE \
+		  $(call-cc-option,-fsanitize=address) \
+		  $(call-cc-option,-fsanitize=thread) \
+		  $(call-cc-option,-march=armv7-a) \
+		  $(call-cc-option,-mcpu=cortex-a9) \
+		  $(call-cc-option,-mfpu=neon) \
+		  $(call-cc-option,-mtune=cortex-a9)
+CFLAGS_MODULE   = $(MODFLAGS)
+AFLAGS_MODULE   = $(MODFLAGS)
+LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
+CFLAGS_KERNEL	= $(call-cc-option,-fsanitize=address) \
+		  $(call-cc-option,-fsanitize=thread) \
+		  $(call-cc-option,-march=armv7-a) \
+		  $(call-cc-option,-mcpu=cortex-a9) \
+		  $(call-cc-option,-mfpu=neon) \
+		  $(call-cc-option,-mtune=cortex-a9)
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
