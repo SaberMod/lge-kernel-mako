@@ -2100,8 +2100,9 @@ static void __init apq8064_common_init(void)
 	rpmrs_level =
 		msm_rpmrs_levels[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE];
 	msm_hsic_pdata.standalone_latency = rpmrs_level.latency_us;
-	msm_hsic_pdata.log2_irq_thresh = 5,
+	
 	if (!mako_charger_mode) {
+		msm_hsic_pdata.log2_irq_thresh = 5,
 		apq8064_device_hsic_host.dev.platform_data = &msm_hsic_pdata;
 		device_initialize(&apq8064_device_hsic_host.dev);
 	}
