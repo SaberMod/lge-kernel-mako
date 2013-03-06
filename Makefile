@@ -355,18 +355,28 @@ MODFLAGS        = -DMODULE \
 		  $(call-cc-option,-fsanitize=address) \
 		  $(call-cc-option,-fsanitize=thread) \
 		  $(call-cc-option,-march=armv7-a) \
-		  $(call-cc-option,-mcpu=cortex-a9) \
 		  $(call-cc-option,-mfpu=neon) \
-		  $(call-cc-option,-mtune=cortex-a9)
+		  $(call-cc-option,-mtune=cortex-a9) \
+		  $(call-cc-option,-fgcse-after-reload) \
+		  $(call-cc-option,-fipa-cp-clone) \
+		  $(call-cc-option,-fpredictive-commoning) \
+		  $(call-cc-option,-fsched-spec-load) \
+		  $(call-cc-option,-funswitch-loops) \
+		  $(call-cc-option,-fvect-cost-model)
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
 CFLAGS_KERNEL	= $(call-cc-option,-fsanitize=address) \
 		  $(call-cc-option,-fsanitize=thread) \
 		  $(call-cc-option,-march=armv7-a) \
-		  $(call-cc-option,-mcpu=cortex-a9) \
 		  $(call-cc-option,-mfpu=neon) \
-		  $(call-cc-option,-mtune=cortex-a9)
+		  $(call-cc-option,-mtune=cortex-a9) \
+		  $(call-cc-option,-fgcse-after-reload) \
+		  $(call-cc-option,-fipa-cp-clone) \
+		  $(call-cc-option,-fpredictive-commoning) \
+		  $(call-cc-option,-fsched-spec-load) \
+		  $(call-cc-option,-funswitch-loops) \
+		  $(call-cc-option,-fvect-cost-model)
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
