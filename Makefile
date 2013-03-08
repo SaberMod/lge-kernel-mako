@@ -352,31 +352,31 @@ CC		= $(srctree)/scripts/gcc-wrapper.py $(REAL_CC)
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 MODFLAGS        = -DMODULE \
-		  $(call-cc-option,-fsanitize=address) \
-		  $(call-cc-option,-fsanitize=thread) \
-		  $(call-cc-option,-march=armv7-a) \
-		  $(call-cc-option,-mfpu=neon) \
-		  $(call-cc-option,-mtune=cortex-a9) \
-		  $(call-cc-option,-fgcse-after-reload) \
-		  $(call-cc-option,-fipa-cp-clone) \
-		  $(call-cc-option,-fpredictive-commoning) \
-		  $(call-cc-option,-fsched-spec-load) \
-		  $(call-cc-option,-funswitch-loops) \
-		  $(call-cc-option,-fvect-cost-model)
+		  -march=armv7-a \
+		  -mfpu=neon \
+		  -mtune=cortex-a9 \
+		  -fgcse-after-reload \
+		  -fipa-cp-clone \
+		  -fpredictive-commoning \
+		  -fsched-spec-load \
+		  -funswitch-loops \
+		  -fvect-cost-model \
+                  $(call cc-ifversion, -ge, 48, $(call cc-option,-fno-aggressive-loop-optimizations)) \
+                  $(call cc-ifversion, -ge, 48, $(call cc-option,-Wno-sizeof-pointer-memaccess))
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= $(call-cc-option,-fsanitize=address) \
-		  $(call-cc-option,-fsanitize=thread) \
-		  $(call-cc-option,-march=armv7-a) \
-		  $(call-cc-option,-mfpu=neon) \
-		  $(call-cc-option,-mtune=cortex-a9) \
-		  $(call-cc-option,-fgcse-after-reload) \
-		  $(call-cc-option,-fipa-cp-clone) \
-		  $(call-cc-option,-fpredictive-commoning) \
-		  $(call-cc-option,-fsched-spec-load) \
-		  $(call-cc-option,-funswitch-loops) \
-		  $(call-cc-option,-fvect-cost-model)
+CFLAGS_KERNEL	= -march=armv7-a \
+		  -mfpu=neon \
+		  -mtune=cortex-a9 \
+		  -fgcse-after-reload \
+		  -fipa-cp-clone \
+		  -fpredictive-commoning \
+		  -fsched-spec-load \
+		  -funswitch-loops \
+		  -fvect-cost-model \
+                   $(call cc-ifversion, -ge, 48, $(call cc-option,-fno-aggressive-loop-optimizations)) \
+                   $(call cc-ifversion, -ge, 48, $(call cc-option,-Wno-sizeof-pointer-memaccess))
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
@@ -388,13 +388,15 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include $(srctree)/include/linux/kconfig.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__
+KBUILD_CPPFLAGS := -D__KERNEL__ $(call cc-ifversion, -ge, 48, $(call cc-option,-fno-aggressive-loop-optimizations)) $(call cc-ifversion, -ge, 48, $(call cc-option,-Wno-sizeof-pointer-memaccess))
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks
+		   -fno-delete-null-pointer-checks \
+                   $(call cc-ifversion, -ge, 48, $(call cc-option,-fno-aggressive-loop-optimizations)) \
+                   $(call cc-ifversion, -ge, 48, $(call cc-option,-Wno-sizeof-pointer-memaccess))
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
