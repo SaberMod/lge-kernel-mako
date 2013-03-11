@@ -355,12 +355,7 @@ MODFLAGS        = -DMODULE \
 		  -march=armv7-a \
 		  -mfpu=neon \
 		  -mtune=cortex-a9 \
-		  -fgcse-after-reload \
-		  -fipa-cp-clone \
-		  -fpredictive-commoning \
-		  -fsched-spec-load \
-		  -funswitch-loops \
-		  -fvect-cost-model
+		  -fsched-spec-load
 ifeq ($(TARGET_GCC),4.8)
 MODFLAGS	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
@@ -371,12 +366,7 @@ LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
 CFLAGS_KERNEL	= -march=armv7-a \
 		  -mfpu=neon \
 		  -mtune=cortex-a9 \
-		  -fgcse-after-reload \
-		  -fipa-cp-clone \
-		  -fpredictive-commoning \
-		  -fsched-spec-load \
-		  -funswitch-loops \
-		  -fvect-cost-model
+		  -fsched-spec-load
 ifeq ($(TARGET_GCC),4.8)
 CFLAGS_KERNEL	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
