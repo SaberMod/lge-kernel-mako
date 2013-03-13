@@ -355,6 +355,7 @@ MODFLAGS        = -DMODULE \
 		  -march=armv7-a \
 		  -mfpu=neon \
 		  -mtune=cortex-a9 \
+		  -Os \
 		  -fgcse-after-reload \
 		  -fipa-cp-clone \
 		  -fpredictive-commoning \
@@ -371,12 +372,14 @@ LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
 CFLAGS_KERNEL	= -march=armv7-a \
 		  -mfpu=neon \
 		  -mtune=cortex-a9 \
+		  -Os \
 		  -fgcse-after-reload \
 		  -fipa-cp-clone \
 		  -fpredictive-commoning \
 		  -fsched-spec-load \
 		  -funswitch-loops \
 		  -fvect-cost-model
+ 
 ifeq ($(TARGET_GCC),4.8)
 CFLAGS_KERNEL	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
@@ -600,29 +603,8 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -Os \
-                   -fthread-jumps \
-                   -fcaller-saves \
-                   -fcrossjumping \
-                   -fcse-follow-jumps -fcse-skip-blocks \
-                   -fdelete-null-pointer-checks \
-                   -fdevirtualize \
-                   -fexpensive-optimizations \
-                   -fgcse \
-                   -fgcse-lm \
-                   -finline-small-functions \
-                   -findirect-inlining \
-                   -fipa-sra \
-                   -foptimize-sibling-calls \
-                   -fpartial-inlining \
-                   -fpeephole2 \
-                   -fregmove \
-                   -frerun-cse-after-loop \
-                   -fsched-interblock -fsched-spec \
-                   -fschedule-insns -fschedule-insns2 \
-                   -ftree-switch-conversion -ftree-tail-merge \
-                   -ftree-pre \
-                   -ftree-vrp
+KBUILD_CFLAGS	+= -O2
+                   
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
