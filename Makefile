@@ -602,6 +602,9 @@ all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
+  ifeq ($(TARGET_GCC),4.8)
+    KBUILD_CFLAGS	+= -Wno-maybe-uninitialized
+  endif
 else
 KBUILD_CFLAGS	+= -O2
                    
