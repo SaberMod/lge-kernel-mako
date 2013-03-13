@@ -603,7 +603,9 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
   ifdef CONFIG_OPIMIZE_SIZE_GCC_48_FIXES
-    KBUILD_CFLAGS	+= -Wno-maybe-uninitialized
+    KBUILD_CFLAGS	+=	-Wno-maybe-uninitialized \
+				-fno-aggressive-loop-optimizations \
+				-Wno-sizeof-pointer-memaccess
   endif
 else
 KBUILD_CFLAGS	+= -O2
