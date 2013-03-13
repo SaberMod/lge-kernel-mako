@@ -362,8 +362,8 @@ MODFLAGS        = -DMODULE \
 		  -fsched-spec-load \
 		  -funswitch-loops \
 		  -fvect-cost-model
-ifeq ($(TARGET_GCC),4.8)
-MODFLAGS	+=	-fno-aggressive-loop-optimizations \
+ifdef CONFIG_GCC_48_FIXES
+  MODFLAGS	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
 endif
 CFLAGS_MODULE   = $(MODFLAGS)
@@ -380,8 +380,8 @@ CFLAGS_KERNEL	= -march=armv7-a \
 		  -funswitch-loops \
 		  -fvect-cost-model
  
-ifeq ($(TARGET_GCC),4.8)
-CFLAGS_KERNEL	+=	-fno-aggressive-loop-optimizations \
+ifdef CONFIG_GCC_48_FIXES
+  CFLAGS_KERNEL	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
 endif
 AFLAGS_KERNEL	=
@@ -397,9 +397,9 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-ifeq ($(TARGET_GCC),4.8)
-KBUILD_CPPFLAGS	+=	-fno-aggressive-loop-optimizations \
-			-Wno-sizeof-pointer-memaccess
+ifdef CONFIG_GCC_48_FIXES
+  KBUILD_CPPFLAGS	+=	-fno-aggressive-loop-optimizations \
+				-Wno-sizeof-pointer-memaccess
 endif
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
@@ -407,8 +407,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
-ifeq ($(TARGET_CC),4.8)
-KBUILD_CFLAGS	+=	-fno-aggressive-loop-optimizations \
+ifdef CONFIG_GCC_48_FIXES
+  KBUILD_CFLAGS	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
 endif
 KBUILD_AFLAGS_KERNEL :=
@@ -602,7 +602,7 @@ all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
-  ifeq ($(TARGET_GCC),4.8)
+  ifdef CONFIG_OPIMIZE_SIZE_GCC_48_FIXES
     KBUILD_CFLAGS	+= -Wno-maybe-uninitialized
   endif
 else
