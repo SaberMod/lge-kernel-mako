@@ -1897,6 +1897,8 @@ static int _regulator_do_set_voltage(struct regulator_dev *rdev,
 		if (rdev->desc->ops->list_voltage)
 			selector = rdev->desc->ops->list_voltage(rdev,
 								 selector);
+		else if (rdev->desc->ops->get_voltage)
+			selector = rdev->desc->ops->get_voltage(rdev);
 		else
 			selector = -1;
 	} else if (rdev->desc->ops->set_voltage_sel) {
@@ -3393,6 +3395,8 @@ unset_supplies:
 	unset_regulator_supplies(rdev);
 
 scrub:
+	if (rdev->supply)
+		regulator_put(rdev->supply);
 	kfree(rdev->constraints);
 	device_unregister(&rdev->dev);
 	/* device core frees rdev */

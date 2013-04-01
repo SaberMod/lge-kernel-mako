@@ -109,18 +109,18 @@ void detect_sweep2wake(int x, int y, struct lge_touch_data *ts)
 		if ((barrier[0] == true) ||
 		   ((x > prevx) &&
 		    (x < nextx) &&
-		    (y > 0))) {
+		    (y > S2W_Y_LIMIT))) {
 			prevx = nextx;
 			nextx = S2W_X_B2;
 			barrier[0] = true;
 			if ((barrier[1] == true) ||
 			   ((x > prevx) &&
 			    (x < nextx) &&
-			    (y > 0))) {
+			    (y > S2W_Y_LIMIT))) {
 				prevx = nextx;
 				barrier[1] = true;
 				if ((x > prevx) &&
-				    (y > 0)) {
+				    (y > S2W_Y_LIMIT)) {
 					if (x > (S2W_X_MAX - S2W_X_FINAL)) {
 						if (exec_count) {
 							printk(KERN_INFO "[sweep2wake]: ON");

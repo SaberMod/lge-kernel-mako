@@ -280,6 +280,12 @@ int kcal_set_values(int kcal_r, int kcal_g, int kcal_b)
 	return 0;
 }
 
+/* motley - keep color alive after screen off/on */
+int kcal_keep_color_alive(void)
+{
+	return update_preset_lcdc_lut();
+}
+
 static int kcal_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
 {
 	*kcal_r = kcal_value.red;
@@ -753,20 +759,12 @@ static char panel_setting_2 [3] = {0xB3, 0x0A, 0x9F};
 static char display_mode1 [6] = {0xB5, 0x50, 0x20, 0x40, 0x00, 0x20};
 static char display_mode2 [8] = {0xB6, 0x00, 0x14, 0x0F, 0x16, 0x13, 0x05, 0x05};
 
-#define g_white       0x40
-#define g_mids        0x44
-#define g_black       0x76
-#define g_contrast    0x19
-#define g_brightness  0x04
-#define g_saturation  0x42
-#define g_greys       0x20
-
-static char p_gamma_r_setting[10] = {0xD0, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
-static char n_gamma_r_setting[10] = {0xD1, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
-static char p_gamma_g_setting[10] = {0xD2, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
-static char n_gamma_g_setting[10] = {0xD3, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
-static char p_gamma_b_setting[10] = {0xD4, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
-static char n_gamma_b_setting[10] = {0xD5, g_white, g_mids, g_black, 0x00, g_contrast, g_brightness, g_saturation, g_greys, 0x01};
+static char p_gamma_r_setting[10] = {0xD0, 0x40, 0x44, 0x76, 0x01, 0x04, 0x02, 0x30, 0x20, 0x01};
+static char n_gamma_r_setting[10] = {0xD1, 0x40, 0x44, 0x76, 0x01, 0x04, 0x02, 0x30, 0x20, 0x01};
+static char p_gamma_g_setting[10] = {0xD2, 0x40, 0x44, 0x76, 0x01, 0x00, 0x00, 0x30, 0x20, 0x01};
+static char n_gamma_g_setting[10] = {0xD3, 0x40, 0x44, 0x76, 0x01, 0x00, 0x00, 0x30, 0x20, 0x01};
+static char p_gamma_b_setting[10] = {0xD4, 0x20, 0x23, 0x74, 0x00, 0x1A, 0x10, 0x50, 0x33, 0x03};
+static char n_gamma_b_setting[10] = {0xD5, 0x20, 0x23, 0x74, 0x00, 0x1A, 0x10, 0x50, 0x33, 0x03};
 
 static char ief_on_set0[2] = {0xE0, 0x00};
 static char ief_on_set4[4] = {0xE4, 0x00, 0x00, 0x00};

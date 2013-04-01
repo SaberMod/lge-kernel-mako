@@ -28,7 +28,7 @@
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/io.h>
-#include <linux/ion.h>
+#include <linux/msm_ion.h>
 #include <linux/types.h>
 #include <linux/clk.h>
 #include <linux/qseecom.h>
@@ -142,12 +142,10 @@ static uint32_t pil_ref_cnt;
 static DEFINE_MUTEX(pil_access_lock);
 
 static DEFINE_MUTEX(qsee_bw_mutex);
-static DEFINE_MUTEX(qsee_sfpb_bw_mutex);
 static DEFINE_MUTEX(app_access_lock);
 
 static int qsee_bw_count;
 static int qsee_sfpb_bw_count;
-static struct clk *qseecom_bus_clk;
 static uint32_t qsee_perf_client;
 
 struct qseecom_registered_listener_list {
@@ -773,7 +771,8 @@ static int qseecom_unload_app(struct qseecom_dev_handle *data)
 	bool unload = false;
 	bool found_app = false;
 
-	if (qseecom.qseos_version == QSEOS_VERSION_14) {
+	if ((qseecom.qseos_version == QSEOS_VERSION_14) &&
+				(data->client.app_id > 0)) {
 		spin_lock_irqsave(&qseecom.registered_app_list_lock, flags);
 		list_for_each_entry(ptr_app, &qseecom.registered_app_list_head,
 								list) {
@@ -784,7 +783,7 @@ static int qseecom_unload_app(struct qseecom_dev_handle *data)
 					break;
 				} else {
 					ptr_app->ref_cnt--;
-					pr_warn("Can't unload app with id %d (it is inuse)\n",
+					pr_warn("Can't unload app(%d) inuse\n",
 							ptr_app->app_id);
 					break;
 				}
@@ -792,10 +791,11 @@ static int qseecom_unload_app(struct qseecom_dev_handle *data)
 		}
 		spin_unlock_irqrestore(&qseecom.registered_app_list_lock,
 								flags);
-	}
-	if (found_app == false)  {
-		pr_err("Cannot find app with id = %d\n", data->client.app_id);
-		return -EINVAL;
+		if (found_app == false) {
+			pr_err("Cannot find app with id = %d\n",
+						data->client.app_id);
+			return -EINVAL;
+		}
 	}
 
 	if ((unload) && (qseecom.qseos_version == QSEOS_VERSION_14)) {
@@ -1199,35 +1199,43 @@ static int qsee_vote_for_clock(int32_t clk_type)
 
 	switch (clk_type) {
 	case CLK_DFAB:
-		/* Check if the clk is valid */
-		if (IS_ERR_OR_NULL(qseecom_bus_clk)) {
-			pr_warn("qseecom bus clock is null or error");
-			return -EINVAL;
-		}
 		mutex_lock(&qsee_bw_mutex);
 		if (!qsee_bw_count) {
-			ret = msm_bus_scale_client_update_request(
-					qsee_perf_client, 1);
+			if (qsee_sfpb_bw_count > 0)
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 3);
+			else
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 1);
 			if (ret)
 				pr_err("DFAB Bandwidth req failed (%d)\n",
 								ret);
 			else
 				qsee_bw_count++;
+		} else {
+			qsee_bw_count++;
 		}
 		mutex_unlock(&qsee_bw_mutex);
 		break;
 	case CLK_SFPB:
-		mutex_lock(&qsee_sfpb_bw_mutex);
+		mutex_lock(&qsee_bw_mutex);
 		if (!qsee_sfpb_bw_count) {
-			ret = msm_bus_scale_client_update_request(
-					qsee_perf_client, 2);
+			if (qsee_bw_count > 0)
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 3);
+			else
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 2);
+
 			if (ret)
 				pr_err("SFPB Bandwidth req failed (%d)\n",
 								ret);
 			else
 				qsee_sfpb_bw_count++;
+		} else {
+			qsee_sfpb_bw_count++;
 		}
-		mutex_unlock(&qsee_sfpb_bw_mutex);
+		mutex_unlock(&qsee_bw_mutex);
 		break;
 	default:
 		pr_err("Clock type not defined\n");
@@ -1245,35 +1253,45 @@ static void qsee_disable_clock_vote(int32_t clk_type)
 
 	switch (clk_type) {
 	case CLK_DFAB:
-		/* Check if the DFAB clk is valid */
-		if (IS_ERR_OR_NULL(qseecom_bus_clk)) {
-			pr_warn("qseecom bus clock is null or error");
+		mutex_lock(&qsee_bw_mutex);
+		if (qsee_bw_count == 0) {
+			pr_err("Client error.Extra call to disable DFAB clk\n");
+			mutex_unlock(&qsee_bw_mutex);
 			return;
 		}
-		mutex_lock(&qsee_bw_mutex);
-		if (qsee_bw_count > 0) {
-			if (qsee_bw_count-- == 1) {
+
+		if ((qsee_bw_count > 0) && (qsee_bw_count-- == 1)) {
+			if (qsee_sfpb_bw_count > 0)
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 2);
+			else
 				ret = msm_bus_scale_client_update_request(
 						qsee_perf_client, 0);
-				if (ret)
-					pr_err("SFPB Bandwidth req fail (%d)\n",
+			if (ret)
+				pr_err("SFPB Bandwidth req fail (%d)\n",
 								ret);
-			}
 		}
 		mutex_unlock(&qsee_bw_mutex);
 		break;
 	case CLK_SFPB:
-		mutex_lock(&qsee_sfpb_bw_mutex);
-		if (qsee_sfpb_bw_count > 0) {
-			if (qsee_sfpb_bw_count-- == 1) {
+		mutex_lock(&qsee_bw_mutex);
+		if (qsee_sfpb_bw_count == 0) {
+			pr_err("Client error.Extra call to disable SFPB clk\n");
+			mutex_unlock(&qsee_bw_mutex);
+			return;
+		}
+		if ((qsee_sfpb_bw_count > 0) && (qsee_sfpb_bw_count-- == 1)) {
+			if (qsee_bw_count > 0)
+				ret = msm_bus_scale_client_update_request(
+						qsee_perf_client, 1);
+			else
 				ret = msm_bus_scale_client_update_request(
 						qsee_perf_client, 0);
-				if (ret)
-					pr_err("SFPB Bandwidth req fail (%d)\n",
+			if (ret)
+				pr_err("SFPB Bandwidth req fail (%d)\n",
 								ret);
-			}
 		}
-		mutex_unlock(&qsee_sfpb_bw_mutex);
+		mutex_unlock(&qsee_bw_mutex);
 		break;
 	default:
 		pr_err("Clock type not defined\n");
@@ -1731,7 +1749,6 @@ static int __devinit qseecom_probe(struct platform_device *pdev)
 	uint32_t system_call_id = QSEOS_CHECK_VERSION_CMD;
 
 	qsee_bw_count = 0;
-	qseecom_bus_clk = NULL;
 	qsee_perf_client = 0;
 
 	rc = alloc_chrdev_region(&qseecom_device_no, 0, 1, QSEECOM_DEV);
@@ -1799,17 +1816,8 @@ static int __devinit qseecom_probe(struct platform_device *pdev)
 		qsee_perf_client = msm_bus_scale_register_client(
 						qseecom_platform_support);
 
-		if (!qsee_perf_client) {
+		if (!qsee_perf_client)
 			pr_err("Unable to register bus client\n");
-		} else {
-			qseecom_bus_clk = clk_get(class_dev, "bus_clk");
-			if (IS_ERR(qseecom_bus_clk)) {
-				qseecom_bus_clk = NULL;
-			} else if (qseecom_bus_clk != NULL) {
-				pr_debug("Enabled DFAB clock");
-				clk_set_rate(qseecom_bus_clk, 64000000);
-			}
-		}
 	}
 	return 0;
 
@@ -1853,8 +1861,6 @@ static int __devinit qseecom_init(void)
 
 static void __devexit qseecom_exit(void)
 {
-	clk_put(qseecom_bus_clk);
-
 	device_destroy(driver_class, qseecom_device_no);
 	class_destroy(driver_class);
 	unregister_chrdev_region(qseecom_device_no, 1);

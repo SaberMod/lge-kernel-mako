@@ -592,6 +592,11 @@ static void __init reserve_cache_dump_memory(void)
 #endif
 }
 
+static void __init reserve_mpdcvs_memory(void)
+{
+	apq8064_reserve_table[MEMTYPE_EBI1].size += SZ_32K;
+}
+
 static void __init apq8064_calculate_reserve_sizes(void)
 {
 	size_pmem_devices();
@@ -600,6 +605,7 @@ static void __init apq8064_calculate_reserve_sizes(void)
 	reserve_mdp_memory();
 	reserve_rtb_memory();
 	reserve_cache_dump_memory();
+	reserve_mpdcvs_memory();
 }
 
 static struct reserve_info apq8064_reserve_info __initdata = {
@@ -727,12 +733,6 @@ static void __init apq8064_early_reserve(void)
 static struct msm_bus_vectors hsic_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_SPS,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_SPS,
 		.dst = MSM_BUS_SLAVE_SPS,
 		.ab = 0,
 		.ib = 0,
@@ -743,15 +743,9 @@ static struct msm_bus_vectors hsic_init_vectors[] = {
 static struct msm_bus_vectors hsic_max_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_SPS,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 60000000,		/* At least 480Mbps on bus. */
-		.ib = 960000000,	/* MAX bursts rate */
-	},
-	{
-		.src = MSM_BUS_MASTER_SPS,
 		.dst = MSM_BUS_SLAVE_SPS,
 		.ab = 0,
-		.ib = 512000000, /*vote for 64Mhz dfab clk rate*/
+		.ib = 256000000, /*vote for 32Mhz dfab clk rate*/
 	},
 };
 
@@ -1542,10 +1536,16 @@ static struct platform_device msm_device_iris_fm __devinitdata = {
 /* qseecom bus scaling */
 static struct msm_bus_vectors qseecom_clks_init_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = 0,
 		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 0,
+		.ib = 0,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1557,10 +1557,16 @@ static struct msm_bus_vectors qseecom_clks_init_vectors[] = {
 
 static struct msm_bus_vectors qseecom_enable_dfab_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = (492 * 8) * 1000000UL,
-		.ab = (492 * 8) *  100000UL,
+		.ab = 70000000UL,
+		.ib = 70000000UL,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 2480000000UL,
+		.ib = 2480000000UL,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1572,10 +1578,37 @@ static struct msm_bus_vectors qseecom_enable_dfab_vectors[] = {
 
 static struct msm_bus_vectors qseecom_enable_sfpb_vectors[] = {
 	{
-		.src = MSM_BUS_MASTER_SPS,
+		.src = MSM_BUS_MASTER_ADM_PORT0,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ib = 0,
 		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_SPDM,
+		.dst = MSM_BUS_SLAVE_SPDM,
+		.ib = (64 * 8) * 1000000UL,
+		.ab = (64 * 8) *  100000UL,
+	},
+};
+
+static struct msm_bus_vectors qseecom_enable_dfab_sfpb_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 70000000UL,
+		.ib = 70000000UL,
+	},
+	{
+		.src = MSM_BUS_MASTER_ADM_PORT1,
+		.dst = MSM_BUS_SLAVE_GSBI1_UART,
+		.ab = 2480000000UL,
+		.ib = 2480000000UL,
 	},
 	{
 		.src = MSM_BUS_MASTER_SPDM,
@@ -1592,11 +1625,15 @@ static struct msm_bus_paths qseecom_hw_bus_scale_usecases[] = {
 	},
 	{
 		ARRAY_SIZE(qseecom_enable_dfab_vectors),
-		qseecom_enable_sfpb_vectors,
+		qseecom_enable_dfab_vectors,
 	},
 	{
 		ARRAY_SIZE(qseecom_enable_sfpb_vectors),
 		qseecom_enable_sfpb_vectors,
+	},
+	{
+		ARRAY_SIZE(qseecom_enable_dfab_sfpb_vectors),
+		qseecom_enable_dfab_sfpb_vectors,
 	},
 };
 
@@ -1838,6 +1875,13 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 	},
 
 	{
+		MSM_PM_SLEEP_MODE_RETENTION,
+		MSM_RPMRS_LIMITS(ON, ACTIVE, MAX, ACTIVE),
+		true,
+		415, 715, 340827, 475,
+	},
+
+	{
 		MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE,
 		MSM_RPMRS_LIMITS(ON, ACTIVE, MAX, ACTIVE),
 		true,
@@ -1929,6 +1973,11 @@ static uint8_t spm_power_collapse_without_rpm[] __initdata = {
 	0x24, 0x30, 0x0f,
 };
 
+static uint8_t spm_retention_cmd_sequence[] __initdata = {
+	0x00, 0x05, 0x03, 0x0D,
+	0x0B, 0x00, 0x0f,
+};
+
 static uint8_t spm_power_collapse_with_rpm[] __initdata = {
 	0x00, 0x24, 0x54, 0x10,
 	0x09, 0x07, 0x01, 0x0B,
@@ -1936,7 +1985,29 @@ static uint8_t spm_power_collapse_with_rpm[] __initdata = {
 	0x24, 0x30, 0x0f,
 };
 
-static struct msm_spm_seq_entry msm_spm_seq_list[] __initdata = {
+static struct msm_spm_seq_entry msm_spm_boot_cpu_seq_list[] __initdata = {
+	[0] = {
+		.mode = MSM_SPM_MODE_CLOCK_GATING,
+		.notify_rpm = false,
+		.cmd = spm_wfi_cmd_sequence,
+	},
+	[1] = {
+		.mode = MSM_SPM_MODE_POWER_RETENTION,
+		.notify_rpm = false,
+		.cmd = spm_retention_cmd_sequence,
+	},
+	[2] = {
+		.mode = MSM_SPM_MODE_POWER_COLLAPSE,
+		.notify_rpm = false,
+		.cmd = spm_power_collapse_without_rpm,
+	},
+	[3] = {
+		.mode = MSM_SPM_MODE_POWER_COLLAPSE,
+		.notify_rpm = true,
+		.cmd = spm_power_collapse_with_rpm,
+	},
+};
+static struct msm_spm_seq_entry msm_spm_nonboot_cpu_seq_list[] __initdata = {
 	[0] = {
 		.mode = MSM_SPM_MODE_CLOCK_GATING,
 		.notify_rpm = false,
@@ -2012,12 +2083,12 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 		.reg_init_values[MSM_SPM_REG_SAW2_AVS_HYSTERESIS] = 0x00,
 #endif
 		.reg_init_values[MSM_SPM_REG_SAW2_SPM_CTL] = 0x01,
-		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DLY] = 0x02020204,
-		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_0] = 0x0060009C,
-		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_1] = 0x0000001C,
+		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DLY] = 0x03020004,
+		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_0] = 0x0084009C,
+		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_1] = 0x00A4001C,
 		.vctl_timeout_us = 50,
-		.num_modes = ARRAY_SIZE(msm_spm_seq_list),
-		.modes = msm_spm_seq_list,
+		.num_modes = ARRAY_SIZE(msm_spm_boot_cpu_seq_list),
+		.modes = msm_spm_boot_cpu_seq_list,
 	},
 	[1] = {
 		.reg_base_addr = MSM_SAW1_BASE,
@@ -2031,8 +2102,8 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_0] = 0x0060009C,
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_1] = 0x0000001C,
 		.vctl_timeout_us = 50,
-		.num_modes = ARRAY_SIZE(msm_spm_seq_list),
-		.modes = msm_spm_seq_list,
+		.num_modes = ARRAY_SIZE(msm_spm_nonboot_cpu_seq_list),
+		.modes = msm_spm_nonboot_cpu_seq_list,
 	},
 	[2] = {
 		.reg_base_addr = MSM_SAW2_BASE,
@@ -2046,8 +2117,8 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_0] = 0x0060009C,
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_1] = 0x0000001C,
 		.vctl_timeout_us = 50,
-		.num_modes = ARRAY_SIZE(msm_spm_seq_list),
-		.modes = msm_spm_seq_list,
+		.num_modes = ARRAY_SIZE(msm_spm_nonboot_cpu_seq_list),
+		.modes = msm_spm_nonboot_cpu_seq_list,
 	},
 	[3] = {
 		.reg_base_addr = MSM_SAW3_BASE,
@@ -2061,8 +2132,8 @@ static struct msm_spm_platform_data msm_spm_data[] __initdata = {
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_0] = 0x0060009C,
 		.reg_init_values[MSM_SPM_REG_SAW2_PMIC_DATA_1] = 0x0000001C,
 		.vctl_timeout_us = 50,
-		.num_modes = ARRAY_SIZE(msm_spm_seq_list),
-		.modes = msm_spm_seq_list,
+		.num_modes = ARRAY_SIZE(msm_spm_nonboot_cpu_seq_list),
+		.modes = msm_spm_nonboot_cpu_seq_list,
 	},
 };
 
@@ -2915,6 +2986,7 @@ static void enable_avc_i2c_bus(void)
 static void __init apq8064_common_init(void)
 {
 	u32 platform_version;
+	struct msm_rpmrs_level rpmrs_level;
 	platform_device_register(&msm_gpio_device);
 	msm_tsens_early_init(&apq_tsens_pdata);
 	msm_thermal_init(&msm_thermal_pdata);
@@ -2949,6 +3021,12 @@ static void __init apq8064_common_init(void)
 		platform_add_devices(common_not_mpq_devices,
 			ARRAY_SIZE(common_not_mpq_devices));
 	enable_ddr3_regulator();
+	rpmrs_level =
+		msm_rpmrs_levels[MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT];
+	msm_hsic_pdata.swfi_latency = rpmrs_level.latency_us;
+	rpmrs_level =
+		msm_rpmrs_levels[MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE];
+	msm_hsic_pdata.standalone_latency = rpmrs_level.latency_us;
 	if (machine_is_apq8064_mtp()) {
 		msm_hsic_pdata.log2_irq_thresh = 5,
 		apq8064_device_hsic_host.dev.platform_data = &msm_hsic_pdata;
@@ -2980,6 +3058,7 @@ static void __init apq8064_common_init(void)
 	msm_spm_l2_init(msm_spm_l2_data);
 	BUG_ON(msm_pm_boot_init(&msm_pm_boot_pdata));
 	apq8064_epm_adc_init();
+	msm_pm_set_tz_retention_flag(1);
 }
 
 static void __init apq8064_allocate_memory_regions(void)

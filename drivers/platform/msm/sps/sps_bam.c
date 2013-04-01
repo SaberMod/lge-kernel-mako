@@ -254,7 +254,8 @@ int sps_bam_enable(struct sps_bam *dev)
 				  dev->props.ee,
 				  (u16) dev->props.summing_threshold,
 				  irq_mask,
-				  &dev->version, &num_pipes);
+				  &dev->version, &num_pipes,
+				  dev->props.options & SPS_BAM_NO_EXT_P_RST);
 	else
 		/* No, so just verify that it is enabled */
 		rc = bam_check(dev->base, &dev->version, &num_pipes);
@@ -401,7 +402,7 @@ int sps_bam_enable(struct sps_bam *dev)
 	}
 
 	dev->state |= BAM_STATE_ENABLED;
-	SPS_DBG2("sps:BAM 0x%x enabled: ver: %d, number of pipes: %d",
+	SPS_INFO("sps:BAM 0x%x enabled: ver:0x%x, number of pipes:%d",
 		BAM_ID(dev), dev->version, dev->props.num_pipes);
 	return 0;
 }
@@ -1004,6 +1005,8 @@ int sps_bam_pipe_set_params(struct sps_bam *dev, u32 pipe_index, u32 options)
 	no_queue = ((options & SPS_O_NO_Q));
 	ack_xfers = ((options & SPS_O_ACK_TRANSFERS));
 
+	pipe->hybrid = options & SPS_O_HYBRID;
+
 	/* Create interrupt source mask */
 	mask = 0;
 	for (n = 0; n < ARRAY_SIZE(opt_event_table); n++) {
@@ -1164,6 +1167,7 @@ int sps_bam_pipe_transfer_one(struct sps_bam *dev,
 	struct sps_iovec *desc;
 	struct sps_iovec iovec;
 	u32 next_write;
+	static int show_recom;
 
 	/* Is this a BAM-to-BAM or satellite connection? */
 	if ((pipe->state & (BAM_STATE_BAM2BAM | BAM_STATE_REMOTE))) {
@@ -1196,12 +1200,24 @@ int sps_bam_pipe_transfer_one(struct sps_bam *dev,
 		if (!pipe->sys.ack_xfers && pipe->polled) {
 			pipe_handler_eot(dev, pipe);
 			if (next_write == pipe->sys.acked_offset) {
+				if (!show_recom) {
+					show_recom = true;
+					SPS_ERR("sps:Client of BAM 0x%x pipe %d is recommended to have flow control",
+						BAM_ID(dev), pipe_index);
+				}
+
 				SPS_DBG2("sps:Descriptor FIFO is full for BAM "
 					"0x%x pipe %d after pipe_handler_eot",
 					BAM_ID(dev), pipe_index);
 				return SPS_ERROR;
 			}
 		} else {
+			if (!show_recom) {
+				show_recom = true;
+				SPS_ERR("sps:Client of BAM 0x%x pipe %d is recommended to have flow control.",
+					BAM_ID(dev), pipe_index);
+			}
+
 			SPS_DBG2("sps:Descriptor FIFO is full for "
 				"BAM 0x%x pipe %d", BAM_ID(dev), pipe_index);
 			return SPS_ERROR;
@@ -1368,8 +1384,8 @@ static void trigger_event(struct sps_bam *dev,
 	}
 
 	if (event_reg->callback) {
-		event_reg->callback(&sps_event->notify);
 		SPS_DBG("sps:trigger_event.using callback.");
+		event_reg->callback(&sps_event->notify);
 	}
 
 }
@@ -1772,7 +1788,7 @@ int sps_bam_pipe_get_iovec(struct sps_bam *dev, u32 pipe_index,
 	}
 
 	/* If pipe is polled and queue is enabled, perform polling operation */
-	if (pipe->polled && !pipe->sys.no_queue)
+	if ((pipe->polled || pipe->hybrid) && !pipe->sys.no_queue)
 		pipe_handler_eot(dev, pipe);
 
 	/* Is there a completed descriptor? */

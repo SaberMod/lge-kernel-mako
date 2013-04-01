@@ -1,4 +1,4 @@
-/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -76,14 +76,12 @@ static int msm_cpuidle_enter(
 	enum msm_pm_sleep_mode pm_mode;
 	struct cpuidle_state_usage *st_usage = NULL;
 
-	local_irq_disable();
-
 #ifdef CONFIG_CPU_PM
 	cpu_pm_enter();
 #endif
 
 	pm_mode = msm_pm_idle_prepare(dev, drv, index);
-	msm_pm_idle_enter(pm_mode);
+	dev->last_residency = msm_pm_idle_enter(pm_mode);
 	for (i = 0; i < dev->state_count; i++) {
 		st_usage = &dev->states_usage[i];
 		if ((enum msm_pm_sleep_mode) cpuidle_get_statedata(st_usage)

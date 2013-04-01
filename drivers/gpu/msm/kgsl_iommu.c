@@ -951,8 +951,6 @@ static int kgsl_iommu_start(struct kgsl_mmu *mmu)
 			iommu->iommu_units
 				[iommu->unit_count - 1].reg_map.gpuaddr -
 				PAGE_SIZE);
-	} else {
-		kgsl_regwrite(mmu->device, MH_MMU_CONFIG, 0x00000000);
 	}
 
 	mmu->hwpagetable = mmu->defaultpagetable;

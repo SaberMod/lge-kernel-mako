@@ -2347,7 +2347,7 @@ static void a3xx_drawctxt_save(struct adreno_device *adreno_dev,
 {
 	struct kgsl_device *device = &adreno_dev->dev;
 
-	if (context == NULL)
+	if (context == NULL || (context->flags & CTXT_FLAGS_BEING_DESTOYED))
 		return;
 
 	if (context->flags & CTXT_FLAGS_GPU_HANG)
@@ -2455,7 +2455,7 @@ static void a3xx_rb_init(struct adreno_device *adreno_dev,
 			 struct adreno_ringbuffer *rb)
 {
 	unsigned int *cmds, cmds_gpu;
-	cmds = adreno_ringbuffer_allocspace(rb, 18);
+	cmds = adreno_ringbuffer_allocspace(rb, NULL, 18);
 	cmds_gpu = rb->buffer_desc.gpuaddr + sizeof(uint) * (rb->wptr - 18);
 
 	GSL_RB_WRITE(cmds, cmds_gpu, cp_type3_packet(CP_ME_INIT, 17));

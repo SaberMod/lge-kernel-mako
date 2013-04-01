@@ -41,8 +41,6 @@
 #define PRI_SRC_SEL_SEC_SRC	0
 #define PRI_SRC_SEL_HFPLL	1
 #define PRI_SRC_SEL_HFPLL_DIV2	2
-#define SEC_SRC_SEL_L2PLL	1
-#define SEC_SRC_SEL_AUX		2
 
 /* PTE EFUSE register offset. */
 #define PTE_EFUSE		0xC0
@@ -81,7 +79,7 @@ static void set_pri_clk_src(struct scalable *sc, u32 pri_src_sel)
 }
 
 /* Select a source on the secondary MUX. */
-static void set_sec_clk_src(struct scalable *sc, u32 sec_src_sel)
+static void __cpuinit set_sec_clk_src(struct scalable *sc, u32 sec_src_sel)
 {
 	u32 regval;
 
@@ -222,7 +220,6 @@ static void set_speed(struct scalable *sc, const struct core_speed *tgt_s)
 		 * Move to an always-on source running at a frequency
 		 * that does not require an elevated CPU voltage.
 		 */
-		set_sec_clk_src(sc, SEC_SRC_SEL_AUX);
 		set_pri_clk_src(sc, PRI_SRC_SEL_SEC_SRC);
 
 		/* Re-program HFPLL. */
@@ -233,15 +230,12 @@ static void set_speed(struct scalable *sc, const struct core_speed *tgt_s)
 		/* Move to HFPLL. */
 		set_pri_clk_src(sc, tgt_s->pri_src_sel);
 	} else if (strt_s->src == HFPLL && tgt_s->src != HFPLL) {
-		set_sec_clk_src(sc, tgt_s->sec_src_sel);
 		set_pri_clk_src(sc, tgt_s->pri_src_sel);
 		hfpll_disable(sc, false);
 	} else if (strt_s->src != HFPLL && tgt_s->src == HFPLL) {
 		hfpll_set_rate(sc, tgt_s);
 		hfpll_enable(sc, false);
 		set_pri_clk_src(sc, tgt_s->pri_src_sel);
-	} else {
-		set_sec_clk_src(sc, tgt_s->sec_src_sel);
 	}
 
 	sc->cur_speed = tgt_s;
@@ -699,7 +693,7 @@ static int __cpuinit init_clock_sources(struct scalable *sc,
 	}
 
 	/* Switch away from the HFPLL while it's re-initialized. */
-	set_sec_clk_src(sc, SEC_SRC_SEL_AUX);
+	set_sec_clk_src(sc, sc->sec_clk_sel);
 	set_pri_clk_src(sc, PRI_SRC_SEL_SEC_SRC);
 	hfpll_init(sc, tgt_s);
 
@@ -709,7 +703,6 @@ static int __cpuinit init_clock_sources(struct scalable *sc,
 	set_l2_indirect_reg(sc->l2cpmr_iaddr, regval);
 
 	/* Switch to the target clock source. */
-	set_sec_clk_src(sc, tgt_s->sec_src_sel);
 	set_pri_clk_src(sc, tgt_s->pri_src_sel);
 	sc->cur_speed = tgt_s;
 
@@ -720,7 +713,6 @@ static void __cpuinit fill_cur_core_speed(struct core_speed *s,
 					  struct scalable *sc)
 {
 	s->pri_src_sel = get_l2_indirect_reg(sc->l2cpmr_iaddr) & 0x3;
-	s->sec_src_sel = (get_l2_indirect_reg(sc->l2cpmr_iaddr) >> 2) & 0x3;
 	s->pll_l_val = readl_relaxed(sc->hfpll_base + drv.hfpll_data->l_offset);
 }
 
@@ -728,7 +720,6 @@ static bool __cpuinit speed_equal(const struct core_speed *s1,
 				  const struct core_speed *s2)
 {
 	return (s1->pri_src_sel == s2->pri_src_sel &&
-		s1->sec_src_sel == s2->sec_src_sel &&
 		s1->pll_l_val == s2->pll_l_val);
 }
 
@@ -833,6 +824,58 @@ static void __init bus_init(const struct l2_level *l2_level)
 	if (ret)
 		dev_err(drv.dev, "initial bandwidth req failed (%d)\n", ret);
 }
+
+#ifdef CONFIG_USERSPACE_VOLTAGE_CONTROL
+
+#define HFPLL_MIN_VDD		 700000
+#define HFPLL_MAX_VDD		1300000
+
+ssize_t acpuclk_get_vdd_levels_str(char *buf) {
+
+	int i, len = 0;
+
+	if (buf) {
+		mutex_lock(&driver_lock);
+
+		for (i = 0; drv.acpu_freq_tbl[i].speed.khz; i++) {
+			if (drv.acpu_freq_tbl[i].use_for_scaling) {
+				/* updated to use uv required by 8x60 architecture - faux123 */
+				len += sprintf(buf + len, "%8lu: %8d\n", drv.acpu_freq_tbl[i].speed.khz,
+						drv.acpu_freq_tbl[i].vdd_core );
+			}
+		}
+
+		mutex_unlock(&driver_lock);
+	}
+	return len;
+}
+
+/* updated to use uv required by 8x60 architecture - faux123 */
+void acpuclk_set_vdd(unsigned int khz, int vdd_uv) {
+
+	int i;
+	unsigned int new_vdd_uv;
+
+	mutex_lock(&driver_lock);
+
+	for (i = 0; drv.acpu_freq_tbl[i].speed.khz; i++) {
+		if (drv.acpu_freq_tbl[i].use_for_scaling) {
+			if (khz == 0)
+				new_vdd_uv = min(max((unsigned int)(drv.acpu_freq_tbl[i].vdd_core + vdd_uv),
+					(unsigned int)HFPLL_MIN_VDD), (unsigned int)HFPLL_MAX_VDD);
+			else if ( drv.acpu_freq_tbl[i].speed.khz == khz)
+				new_vdd_uv = min(max((unsigned int)vdd_uv,
+					(unsigned int)HFPLL_MIN_VDD), (unsigned int)HFPLL_MAX_VDD);
+			else
+				continue;
+
+			drv.acpu_freq_tbl[i].vdd_core = new_vdd_uv;
+		}
+	}
+	pr_warn("User voltage table modified!\n");
+	mutex_unlock(&driver_lock);
+}
+#endif
 
 #ifdef CONFIG_CPU_FREQ_MSM
 static struct cpufreq_frequency_table freq_table[NR_CPUS][35];

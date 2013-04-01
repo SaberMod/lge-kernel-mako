@@ -643,10 +643,10 @@ static inline void bam_write_reg_field(void *base, u32 offset,
  */
 int bam_init(void *base, u32 ee,
 		u16 summing_threshold,
-		u32 irq_mask, u32 *version, u32 *num_pipes)
+		u32 irq_mask, u32 *version,
+		u32 *num_pipes, u32 p_rst)
 {
-	/* disable bit#11 because of HW bug */
-	u32 cfg_bits = 0xffffffff & ~(1 << 11);
+	u32 cfg_bits;
 	u32 ver = 0;
 
 	SPS_DBG2("sps:%s:bam=0x%x(va).ee=%d.", __func__, (u32) base, ee);
@@ -658,7 +658,7 @@ int bam_init(void *base, u32 ee,
 				(u32) base, ver);
 		return -ENODEV;
 	} else
-		SPS_INFO("sps:REVISION of BAM 0x%x is 0x%x.\n",
+		SPS_DBG2("sps:REVISION of BAM 0x%x is 0x%x.\n",
 				(u32) base, ver);
 
 	if (summing_threshold == 0) {
@@ -667,6 +667,11 @@ int bam_init(void *base, u32 ee,
 				"use default 4.\n", (u32) base);
 	}
 
+	if (p_rst)
+		cfg_bits = 0xffffffff & ~(3 << 11);
+	else
+		cfg_bits = 0xffffffff & ~(1 << 11);
+
 	bam_write_reg_field(base, CTRL, BAM_SW_RST, 1);
 	/* No delay needed */
 	bam_write_reg_field(base, CTRL, BAM_SW_RST, 0);
@@ -674,7 +679,7 @@ int bam_init(void *base, u32 ee,
 	bam_write_reg_field(base, CTRL, BAM_EN, 1);
 
 #ifdef CONFIG_SPS_SUPPORT_NDP_BAM
-	bam_write_reg_field(base, CTRL, CACHE_MISS_ERR_RESP_EN, 1);
+	bam_write_reg_field(base, CTRL, CACHE_MISS_ERR_RESP_EN, 0);
 
 	bam_write_reg_field(base, CTRL, LOCAL_CLK_GATING, 1);
 #endif
@@ -1397,4 +1402,33 @@ void print_bam_pipe_desc_fifo(void *virt_addr, u32 pipe_index)
 			desc_fifo[(i / 4) + 2], desc_fifo[(i / 4) + 3]);
 
 	SPS_INFO("--------------------  end of FIFO  --------------------\n");
+}
+
+/* output BAM_TEST_BUS_REG with specified TEST_BUS_SEL */
+void print_bam_test_bus_reg(void *base, u32 tb_sel)
+{
+	u32 i;
+	u32 test_bus_selection[] = {0x1, 0x2, 0x3, 0x4, 0xD, 0x10,
+			0x41, 0x42, 0x43, 0x44, 0x45, 0x46};
+	u32 size = sizeof(test_bus_selection) / sizeof(u32);
+
+	if ((base == NULL) || (tb_sel == 0))
+		return;
+
+	SPS_INFO("\nsps:Specified TEST_BUS_SEL value: 0x%x\n", tb_sel);
+	bam_write_reg_field(base, TEST_BUS_SEL, BAM_TESTBUS_SEL, tb_sel);
+	SPS_INFO("sps:BAM_TEST_BUS_REG: 0x%x when TEST_BUS_SEL: 0x%x\n\n",
+		bam_read_reg(base, TEST_BUS_REG),
+		bam_read_reg_field(base, TEST_BUS_SEL, BAM_TESTBUS_SEL));
+
+	/* output other selections */
+	for (i = 0; i < size; i++) {
+		bam_write_reg_field(base, TEST_BUS_SEL, BAM_TESTBUS_SEL,
+					test_bus_selection[i]);
+
+		SPS_INFO("sps:bam 0x%x(va);TEST_BUS_REG:0x%x;TEST_BUS_SEL:0x%x",
+			(u32) base, bam_read_reg(base, TEST_BUS_REG),
+			bam_read_reg_field(base, TEST_BUS_SEL,
+					BAM_TESTBUS_SEL));
+	}
 }

@@ -89,6 +89,9 @@ u8 logging_option;
 u8 debug_level_option;
 u8 print_limit_option;
 u8 reg_dump_option;
+u32 testbus_sel;
+u32 bam_pipe_sel;
+
 
 static char *debugfs_buf;
 static u32 debugfs_buf_size;
@@ -101,6 +104,8 @@ struct dentry *dfile_logging_option;
 struct dentry *dfile_debug_level_option;
 struct dentry *dfile_print_limit_option;
 struct dentry *dfile_reg_dump_option;
+struct dentry *dfile_testbus_sel;
+struct dentry *dfile_bam_pipe_sel;
 struct dentry *dfile_bam_addr;
 
 static struct sps_bam *phy2bam(u32 phys_addr);
@@ -325,29 +330,52 @@ static ssize_t sps_set_bam_addr(struct file *file, const char __user *buf,
 		for (i = 0; i < num_pipes; i++)
 			print_bam_pipe_selected_reg(vir_addr, i);
 		break;
-	case 5: /* output selected registers of some pipes */
+	case 5: /* output selected registers of selected pipes */
+		for (i = 0; i < num_pipes; i++)
+			if (bam_pipe_sel & (1UL << i))
+				print_bam_pipe_selected_reg(vir_addr, i);
+		break;
+	case 6: /* output selected registers of typical pipes */
 		print_bam_pipe_selected_reg(vir_addr, 4);
 		print_bam_pipe_selected_reg(vir_addr, 5);
 		break;
-	case 6: /* output desc FIFO of all active pipes */
+	case 7: /* output desc FIFO of all pipes */
 		for (i = 0; i < num_pipes; i++)
 			print_bam_pipe_desc_fifo(vir_addr, i);
 		break;
-	case 7: /* output desc FIFO of some pipes */
+	case 8: /* output desc FIFO of selected pipes */
+		for (i = 0; i < num_pipes; i++)
+			if (bam_pipe_sel & (1UL << i))
+				print_bam_pipe_desc_fifo(vir_addr, i);
+		break;
+	case 9: /* output desc FIFO of typical pipes */
 		print_bam_pipe_desc_fifo(vir_addr, 4);
 		print_bam_pipe_desc_fifo(vir_addr, 5);
 		break;
-	case 8: /* output selected registers and valid desc FIFO of all pipes */
+	case 10: /* output selected registers and desc FIFO of all pipes */
 		for (i = 0; i < num_pipes; i++) {
 			print_bam_pipe_selected_reg(vir_addr, i);
 			print_bam_pipe_desc_fifo(vir_addr, i);
 		}
 		break;
-	case 9: /* output selected registers and desc FIFO of some pipes */
+	case 11: /* output selected registers and desc FIFO of selected pipes */
+		for (i = 0; i < num_pipes; i++)
+			if (bam_pipe_sel & (1UL << i)) {
+				print_bam_pipe_selected_reg(vir_addr, i);
+				print_bam_pipe_desc_fifo(vir_addr, i);
+			}
+		break;
+	case 12: /* output selected registers and desc FIFO of typical pipes */
 		print_bam_pipe_selected_reg(vir_addr, 4);
 		print_bam_pipe_desc_fifo(vir_addr, 4);
 		print_bam_pipe_selected_reg(vir_addr, 5);
 		print_bam_pipe_desc_fifo(vir_addr, 5);
+		break;
+	case 13: /* output BAM_TEST_BUS_REG */
+		if (testbus_sel)
+			print_bam_test_bus_reg(vir_addr, testbus_sel);
+		else
+			pr_info("sps:TEST_BUS_SEL should NOT be zero.");
 		break;
 	default:
 		pr_info("sps:no dump option is chosen yet.");
@@ -367,6 +395,8 @@ static void sps_debugfs_init(void)
 	debug_level_option = 0;
 	print_limit_option = 0;
 	reg_dump_option = 0;
+	testbus_sel = 0;
+	bam_pipe_sel = 0;
 	debugfs_buf_size = 0;
 	debugfs_buf_used = 0;
 	wraparound = false;
@@ -377,14 +407,14 @@ static void sps_debugfs_init(void)
 		return;
 	}
 
-	dfile_info = debugfs_create_file("info", 0664, dent, 0,
+	dfile_info = debugfs_create_file("info", 0666, dent, 0,
 			&sps_info_ops);
 	if (!dfile_info || IS_ERR(dfile_info)) {
 		pr_err("sps:fail to create the file for debug_fs info.\n");
 		goto info_err;
 	}
 
-	dfile_logging_option = debugfs_create_file("logging_option", 0664,
+	dfile_logging_option = debugfs_create_file("logging_option", 0666,
 			dent, 0, &sps_logging_option_ops);
 	if (!dfile_logging_option || IS_ERR(dfile_logging_option)) {
 		pr_err("sps:fail to create the file for debug_fs "
@@ -393,7 +423,7 @@ static void sps_debugfs_init(void)
 	}
 
 	dfile_debug_level_option = debugfs_create_u8("debug_level_option",
-					0664, dent, &debug_level_option);
+					0666, dent, &debug_level_option);
 	if (!dfile_debug_level_option || IS_ERR(dfile_debug_level_option)) {
 		pr_err("sps:fail to create the file for debug_fs "
 			"debug_level_option.\n");
@@ -401,14 +431,14 @@ static void sps_debugfs_init(void)
 	}
 
 	dfile_print_limit_option = debugfs_create_u8("print_limit_option",
-					0664, dent, &print_limit_option);
+					0666, dent, &print_limit_option);
 	if (!dfile_print_limit_option || IS_ERR(dfile_print_limit_option)) {
 		pr_err("sps:fail to create the file for debug_fs "
 			"print_limit_option.\n");
 		goto print_limit_option_err;
 	}
 
-	dfile_reg_dump_option = debugfs_create_u8("reg_dump_option", 0664,
+	dfile_reg_dump_option = debugfs_create_u8("reg_dump_option", 0666,
 						dent, &reg_dump_option);
 	if (!dfile_reg_dump_option || IS_ERR(dfile_reg_dump_option)) {
 		pr_err("sps:fail to create the file for debug_fs "
@@ -416,7 +446,21 @@ static void sps_debugfs_init(void)
 		goto reg_dump_option_err;
 	}
 
-	dfile_bam_addr = debugfs_create_file("bam_addr", 0664,
+	dfile_testbus_sel = debugfs_create_u32("testbus_sel", 0666,
+						dent, &testbus_sel);
+	if (!dfile_testbus_sel || IS_ERR(dfile_testbus_sel)) {
+		pr_err("sps:fail to create debug_fs file for testbus_sel.\n");
+		goto testbus_sel_err;
+	}
+
+	dfile_bam_pipe_sel = debugfs_create_u32("bam_pipe_sel", 0666,
+						dent, &bam_pipe_sel);
+	if (!dfile_bam_pipe_sel || IS_ERR(dfile_bam_pipe_sel)) {
+		pr_err("sps:fail to create debug_fs file for bam_pipe_sel.\n");
+		goto bam_pipe_sel_err;
+	}
+
+	dfile_bam_addr = debugfs_create_file("bam_addr", 0666,
 			dent, 0, &sps_bam_addr_ops);
 	if (!dfile_bam_addr || IS_ERR(dfile_bam_addr)) {
 		pr_err("sps:fail to create the file for debug_fs "
@@ -427,6 +471,10 @@ static void sps_debugfs_init(void)
 	return;
 
 bam_addr_err:
+	debugfs_remove(dfile_bam_pipe_sel);
+bam_pipe_sel_err:
+	debugfs_remove(dfile_testbus_sel);
+testbus_sel_err:
 	debugfs_remove(dfile_reg_dump_option);
 reg_dump_option_err:
 	debugfs_remove(dfile_print_limit_option);
@@ -452,6 +500,10 @@ static void sps_debugfs_exit(void)
 		debugfs_remove(dfile_print_limit_option);
 	if (dfile_reg_dump_option)
 		debugfs_remove(dfile_reg_dump_option);
+	if (dfile_testbus_sel)
+		debugfs_remove(dfile_testbus_sel);
+	if (dfile_bam_pipe_sel)
+		debugfs_remove(dfile_bam_pipe_sel);
 	if (dfile_bam_addr)
 		debugfs_remove(dfile_bam_addr);
 	if (dent)
@@ -462,7 +514,8 @@ static void sps_debugfs_exit(void)
 #endif
 
 /* Get the debug info of BAM registers and descriptor FIFOs */
-int sps_get_bam_debug_info(u32 dev, u32 option, u32 para)
+int sps_get_bam_debug_info(u32 dev, u32 option, u32 para,
+		u32 tb_sel, u8 pre_level)
 {
 	int res = 0;
 	struct sps_bam *bam;
@@ -544,6 +597,12 @@ int sps_get_bam_debug_info(u32 dev, u32 option, u32 para)
 		print_bam_pipe_desc_fifo(vir_addr, 4);
 		print_bam_pipe_selected_reg(vir_addr, 5);
 		print_bam_pipe_desc_fifo(vir_addr, 5);
+		break;
+	case 13: /* output BAM_TEST_BUS_REG */
+		if (tb_sel)
+			print_bam_test_bus_reg(vir_addr, tb_sel);
+		else
+			pr_info("sps:TEST_BUS_SEL should NOT be zero.");
 		break;
 	default:
 		pr_info("sps:no option is chosen yet.");
@@ -1769,19 +1828,6 @@ int sps_register_bam_device(const struct sps_bam_props *bam_props,
 	if (virt_addr != NULL)
 		bam->props.virt_addr = virt_addr;
 
-	if ((bam_props->manage & SPS_BAM_MGR_DEVICE_REMOTE) != 0 &&
-	    (bam_props->manage & SPS_BAM_MGR_MULTI_EE) != 0 &&
-	    bam_props->ee == 0) {
-		/*
-		 * BAM global is owned by a remote processor, so force EE index
-		 * to a non-zero value to insure EE zero globals are not
-		 * modified.
-		 */
-		SPS_DBG2("sps:Setting EE for BAM %x to non-zero",
-				  bam_props->phys_addr);
-		bam->props.ee = 1;
-	}
-
 	ok = sps_bam_device_init(bam);
 	mutex_unlock(&bam->lock);
 	if (ok) {
@@ -2076,14 +2122,6 @@ static int get_device_tree_data(struct platform_device *pdev)
 		SPS_DBG("sps:bamdma_restricted_pipes=0x%x.",
 			sps->bamdma_restricted_pipes);
 
-	if (of_property_read_u32((&pdev->dev)->of_node,
-				"qcom,device-type",
-				&d_type)) {
-		d_type = 1;
-		SPS_DBG("sps:default device type.\n");
-	} else
-		SPS_DBG("sps:device type is %d.", d_type);
-
 	resource  = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (resource) {
 		sps->bamdma_bam_phys_base = resource->start;
@@ -2127,6 +2165,14 @@ static int get_device_tree_data(struct platform_device *pdev)
 		return -ENODEV;
 	}
 #endif
+
+	if (of_property_read_u32((&pdev->dev)->of_node,
+				"qcom,device-type",
+				&d_type)) {
+		d_type = 1;
+		SPS_DBG("sps:default device type.\n");
+	} else
+		SPS_DBG("sps:device type is %d.", d_type);
 
 	return 0;
 }
