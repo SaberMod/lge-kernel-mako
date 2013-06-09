@@ -131,22 +131,6 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_slow[] __initdata = {
-	{ 1, {   384000, PLL_8, 0, 0x00 }, L2(0),   900000 },
-	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(6),   925000 },
-	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(6),   950000 },
-	{ 1, {   702000, HFPLL, 1, 0x1A }, L2(6),   975000 },
-	{ 1, {   810000, HFPLL, 1, 0x1E }, L2(6),  1025000 },
-	{ 1, {   918000, HFPLL, 1, 0x22 }, L2(6),  1050000 },
-	{ 1, {  1026000, HFPLL, 1, 0x26 }, L2(6),  1075000 },
-	{ 1, {  1134000, HFPLL, 1, 0x2A }, L2(15), 1125000 },
-	{ 1, {  1242000, HFPLL, 1, 0x2E }, L2(15), 1150000 },
-	{ 1, {  1350000, HFPLL, 1, 0x32 }, L2(15), 1175000 },
-	{ 1, {  1458000, HFPLL, 1, 0x36 }, L2(15), 1187500 },
-	{ 1, {  1512000, HFPLL, 1, 0x38 }, L2(15), 1200000 },
-	{ 0, { 0 } }
-};
-
-static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
 	{ 1, {   384000, PLL_8, 0, 0x00 }, L2(0),   850000 },
 	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(6),   875000 },
 	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(6),   900000 },
@@ -162,7 +146,7 @@ static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
 	{ 0, { 0 } }
 };
 
-static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
+static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
 	{ 1, {   384000, PLL_8, 0, 0x00 }, L2(0),   800000 },
 	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(5),   825000 },
 	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(5),   850000 },
@@ -175,6 +159,22 @@ static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
 	{ 1, {  1350000, HFPLL, 1, 0x32 }, L2(15), 1075000 },
 	{ 1, {  1458000, HFPLL, 1, 0x36 }, L2(15), 1087500 },
 	{ 1, {  1512000, HFPLL, 1, 0x38 }, L2(15), 1100000 },
+	{ 0, { 0 } }
+};
+
+static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
+	{ 1, {   384000, PLL_8, 0, 0x00 }, L2(0),   750000 },
+	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(5),   775000 },
+	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(5),   800000 },
+	{ 1, {   702000, HFPLL, 1, 0x1A }, L2(5),   825000 },
+	{ 1, {   810000, HFPLL, 1, 0x1E }, L2(5),   875000 },
+	{ 1, {   918000, HFPLL, 1, 0x22 }, L2(5),   900000 },
+	{ 1, {  1026000, HFPLL, 1, 0x26 }, L2(5),   925000 },
+	{ 1, {  1134000, HFPLL, 1, 0x2A }, L2(15),  975000 },
+	{ 1, {  1242000, HFPLL, 1, 0x2E }, L2(15), 1000000 },
+	{ 1, {  1350000, HFPLL, 1, 0x32 }, L2(15), 1025000 },
+	{ 1, {  1458000, HFPLL, 1, 0x36 }, L2(15), 1037500 },
+	{ 1, {  1512000, HFPLL, 1, 0x38 }, L2(15), 1050000 },
 	{ 0, { 0 } }
 };
 
