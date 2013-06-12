@@ -353,7 +353,8 @@ MODFLAGS        = -DMODULE \
 		  -mtune=cortex-a9 \
 		  -Os
 ifdef CONFIG_GCC_48_FIXES
-  MODFLAGS	+=	-Wno-sizeof-pointer-memaccess
+  MODFLAGS	+=	-fno-aggressive-loop-optimizations \
+			-Wno-sizeof-pointer-memaccess
 endif
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
@@ -363,7 +364,8 @@ CFLAGS_KERNEL	= -march=armv7-a \
 		  -mtune=cortex-a9 \
 		  -Os
 ifdef CONFIG_GCC_48_FIXES
-  CFLAGS_KERNEL	+=	-Wno-sizeof-pointer-memaccess
+  CFLAGS_KERNEL	+=	-fno-aggressive-loop-optimizations \
+			-Wno-sizeof-pointer-memaccess
 endif
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
@@ -379,7 +381,8 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 ifdef CONFIG_GCC_48_FIXES
-  KBUILD_CPPFLAGS	+=	-Wno-sizeof-pointer-memaccess
+  KBUILD_CPPFLAGS	+=	-fno-aggressive-loop-optimizations \
+				-Wno-sizeof-pointer-memaccess
 endif
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
@@ -388,7 +391,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
 ifdef CONFIG_GCC_48_FIXES
-  KBUILD_CFLAGS	+=	-Wno-sizeof-pointer-memaccess
+  KBUILD_CFLAGS	+=	-fno-aggressive-loop-optimizations \
+			-Wno-sizeof-pointer-memaccess
 endif
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -583,6 +587,7 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
   ifdef CONFIG_OPIMIZE_SIZE_GCC_48_FIXES
     KBUILD_CFLAGS	+=	-Wno-maybe-uninitialized \
+				-fno-aggressive-loop-optimizations \
 				-Wno-sizeof-pointer-memaccess
   endif
 else
