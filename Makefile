@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer
-HOSTCXXFLAGS = -O3
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-inline-functions -fomit-frame-pointer
+HOSTCXXFLAGS = -O3 -fno-unswitch-loops -fno-inline-functions
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -351,7 +351,10 @@ MODFLAGS        = -DMODULE \
 		  -march=armv7-a \
 		  -mfpu=neon-vfpv4 \
 		  -mtune=cortex-a9 \
-		  -O3
+		  -O3 \
+		  -fno-unswitch-loops \
+		  -fno-inline-functions
+		  
 ifdef CONFIG_GCC_48_FIXES
   MODFLAGS	+=	-fno-aggressive-loop-optimizations \
 			-Wno-sizeof-pointer-memaccess
@@ -591,7 +594,7 @@ KBUILD_CFLAGS	+= -Os
 				-Wno-sizeof-pointer-memaccess
   endif
 else
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -fno-inline-functions
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
