@@ -224,22 +224,15 @@ struct syscore_ops panel_syscore_ops = {
 
 static bool calc_checksum(int intArr[]) {
 	int i = 0;
-	int chksum = 0;
-	int final = 9;
+	unsigned char chksum = 0;
 
-	if (intArr[5] > 31 || (intArr[6] > 31)) {
-		return false;
-	}
+	for (i=1; i<10; i++)
+		chksum += intArr[i];
 
-	for (i=1; i<10; i++) {
-		if (intArr[i] < 256) {
-			chksum += 1;
-		}
-	}
-	
-	if (chksum == final) {
+	if (chksum == (unsigned char)intArr[0]) {
 		return true;
 	} else {
+		//pr_info("expecting %d, got this %d instead!", chksum, intArr[0]);
 		return false;
 	}
 }
