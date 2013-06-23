@@ -35,6 +35,11 @@ CONFIG_HAVE_IRQ_WORK=y
 CONFIG_IRQ_WORK=y
 
 #
+# Saber setup
+#
+CONFIG_GAMMA_CONTROL=y
+
+#
 # General setup
 #
 CONFIG_EXPERIMENTAL=y
