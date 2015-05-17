@@ -40,8 +40,6 @@ struct map_desc {
 
 #ifdef CONFIG_MMU
 extern void iotable_init(struct map_desc *, int);
-extern void vm_reserve_area_early(unsigned long addr, unsigned long size,
-				  void *caller);
 
 struct mem_type;
 extern const struct mem_type *get_mem_type(unsigned int type);
@@ -55,7 +53,6 @@ extern int ioremap_pages(unsigned long virt, unsigned long phys,
 			unsigned long size, const struct mem_type *mtype);
 #else
 #define iotable_init(map,num)	do { } while (0)
-#define vm_reserve_area_early(a,s,c)	do { } while (0)
 #endif
 
 #endif
