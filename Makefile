@@ -415,27 +415,6 @@ else
     endif
 endif
 
-ifeq ($(strip $(ENABLE_PTHREAD)),true)
-  # posix (pthread) C flag, if the compiler supports it
-  # Using a flag like -ftree-parallelize-loops=n can disable this feature
-  # In such cases the -pthread flag will not get passed to gcc
-  # Instead it will give a warning
-  pthread-flag	:= -pthread
-  ifeq ($(call cc-option, $(pthread-flag)),)
-  $(warning ********************************************************************************)
-  $(warning * $(pthread-flag) not supported by compiler)
-  $(warning * Or another gcc flag has disabled it)
-  $(warning * Not passing the $(pthread-flag) option to gcc)
-  $(warning ********************************************************************************)
-  else
-      ifdef SABERMOD_KERNEL_CFLAGS
-      SABERMOD_KERNEL_CFLAGS	+= $(pthread-flag)
-      else
-      SABERMOD_KERNEL_CFLAGS	:= $(pthread-flag)
-      endif
-  endif
-endif
-
 # Strict aliasing for hammerhead if enabled in the defconfig
 ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
     ifdef SABERMOD_KERNEL_CFLAGS
