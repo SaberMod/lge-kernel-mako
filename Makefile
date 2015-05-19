@@ -416,7 +416,7 @@ else
 endif
 
 # Strict aliasing for hammerhead if enabled in the defconfig
-ifdef CONFIG_MACH_MSM8974_HAMMERHEAD_STRICT_ALIASING
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
     ifdef SABERMOD_KERNEL_CFLAGS
     SABERMOD_KERNEL_CFLAGS	+= $(KERNEL_STRICT_FLAGS)
     else
