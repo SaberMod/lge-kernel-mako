@@ -331,12 +331,6 @@ include $(srctree)/scripts/Kbuild.include
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
 CC		= $(CROSS_COMPILE)gcc
-ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
-CC		+= -O3
-endif
-CC		+= \
-	$(kernel_arch_variant_cflags) \
-	-pthread
 CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
@@ -426,19 +420,35 @@ endif
 
 # Memory leak detector sanitizer
 ifdef SABERMOD_KERNEL_CFLAGS
-  SABERMOD_KERNEL_CFLAGS += -fsanitize=leak
+SABERMOD_KERNEL_CFLAGS += -fsanitize=leak
 else
-  SABERMOD_KERNEL_CFLAGS := -fsanitize=leak
+SABERMOD_KERNEL_CFLAGS := -fsanitize=leak
 endif
 
 ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
     ifdef SABERMOD_KERNEL_CFLAGS
         ifdef GRAPHITE_KERNEL_FLAGS
         SABERMOD_KERNEL_CFLAGS	+= $(GRAPHITE_KERNEL_FLAGS)
+            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=%,$(SABERMOD_KERNEL_CFLAGS)),)
+            SABERMOD_KERNEL_CFLAGS += \
+              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+              -lgomp -lgcc
+            LD += \
+              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+              -lgomp -lgcc
+            endif
         endif
     else
         ifdef GRAPHITE_KERNEL_FLAGS
         SABERMOD_KERNEL_CFLAGS	:= $(GRAPHITE_KERNEL_FLAGS)
+            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=%,$(SABERMOD_KERNEL_CFLAGS)),)
+            SABERMOD_KERNEL_CFLAGS += \
+              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+              -lgomp -lgcc
+            LD += \
+              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+              -lgomp -lgcc
+            endif
         endif
     endif
 endif
