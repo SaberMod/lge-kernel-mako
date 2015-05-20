@@ -391,3 +391,12 @@ ifdef CONFIG_MSM_CPR
 obj-$(CONFIG_DEBUG_FS) += msm_cpr-debug.o
 endif
 obj-$(CONFIG_MSM_CPU_PWRCTL) +=  msm_cpu_pwrctl.o
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_bam_dmux.o := -fno-strict-aliasing
+CFLAGS_ipc_router_smd_xprt.o := -fno-strict-aliasing
+CFLAGS_ipc_router.o := -fno-strict-aliasing
+CFLAGS_ipc_socket.o := -fno-strict-aliasing
+CFLAGS_rpm_log.o := -fno-strict-aliasing
+endif
+

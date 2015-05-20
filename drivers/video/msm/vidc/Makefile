@@ -60,3 +60,8 @@ obj-$(CONFIG_MSM_VIDC_VENC) += vidc_venc.o
 
 vidc_venc-objs :=	common/enc/venc.o \
 			common/enc/venc_internal.o
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_vidc.o := -fno-strict-aliasing
+endif
+

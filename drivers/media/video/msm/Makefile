@@ -57,3 +57,10 @@ obj-$(CONFIG_MT9D112) += mt9d112.o mt9d112_reg.o
 
 obj-$(CONFIG_MT9D113) += mt9d113.o mt9d113_reg.o
 obj-$(CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE) += msm_v4l2_video.o
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_mdm_ctrl_bridge.o := -fno-strict-aliasing
+CFLAGS_msm_mctl_pp.o := -fno-strict-aliasing
+CFLAGS_msm_isp.o := -fno-strict-aliasing
+endif
+

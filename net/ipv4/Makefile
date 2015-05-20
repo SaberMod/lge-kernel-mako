@@ -54,3 +54,7 @@ obj-$(CONFIG_NETLABEL) += cipso_ipv4.o
 
 obj-$(CONFIG_XFRM) += xfrm4_policy.o xfrm4_state.o xfrm4_input.o \
 		      xfrm4_output.o
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_KERNEL := -fno-strict-aliasing
+endif

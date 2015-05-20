@@ -37,3 +37,7 @@ EXTRA_CFLAGS = $(DHDCFLAGS)
 ifeq ($(CONFIG_BCMDHD),m)
 EXTRA_LDFLAGS += --strip-debug
 endif
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_KERNEL := -fno-strict-aliasing
+endif

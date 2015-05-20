@@ -409,8 +409,8 @@ else
     endif
 endif
 
-# Strict aliasing for hammerhead if enabled in the defconfig
-ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+# Strict aliasing for mako if enabled in the defconfig
+ifeq ($(strip $(CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING)),y)
     ifdef SABERMOD_KERNEL_CFLAGS
     SABERMOD_KERNEL_CFLAGS	+= $(KERNEL_STRICT_FLAGS)
     else
@@ -429,7 +429,7 @@ ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
     ifdef SABERMOD_KERNEL_CFLAGS
         ifdef GRAPHITE_KERNEL_FLAGS
         SABERMOD_KERNEL_CFLAGS	+= $(GRAPHITE_KERNEL_FLAGS)
-            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=%,$(SABERMOD_KERNEL_CFLAGS)),)
+            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_CFLAGS)),)
             SABERMOD_KERNEL_CFLAGS += \
               -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
               -lgomp -lgcc
@@ -441,7 +441,7 @@ ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
     else
         ifdef GRAPHITE_KERNEL_FLAGS
         SABERMOD_KERNEL_CFLAGS	:= $(GRAPHITE_KERNEL_FLAGS)
-            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=%,$(SABERMOD_KERNEL_CFLAGS)),)
+            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_CFLAGS)),)
             SABERMOD_KERNEL_CFLAGS += \
               -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
               -lgomp -lgcc
@@ -455,7 +455,7 @@ endif
 
 # Add everything to CC at the end
 ifdef SABERMOD_KERNEL_CFLAGS
-CC	+= $(SABERMOD_KERNEL_CFLAGS)
+CC	+= $(SABERMOD_KERNEL_CFLAGS) -marm
 endif
 # end The SaberMod Project additions
 
@@ -469,10 +469,13 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
+		   -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks
+ifneq ($(strip $(CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING)),y)
+KBUILD_CFLAGS   += -fno-strict-aliasing
+endif
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
@@ -662,10 +665,12 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
-else
-KBUILD_CFLAGS	+= -O2
+ifneq ($(strip $(O3_OPTIMIZATIONS)),true)
+    ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+    KBUILD_CFLAGS	+= -Os
+    else
+    KBUILD_CFLAGS	+= -O2
+    endif
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile

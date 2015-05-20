@@ -220,3 +220,8 @@ obj-$(CONFIG_MSM_WFD) += msm_wfd/
 ccflags-y += -I$(srctree)/drivers/media/dvb/dvb-core
 ccflags-y += -I$(srctree)/drivers/media/dvb/frontends
 ccflags-y += -I$(srctree)/drivers/media/common/tuners
+
+ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
+CFLAGS_v4l2-ioctl.o := -fno-strict-aliasing
+endif
+
