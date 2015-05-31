@@ -330,8 +330,6 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
-CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
@@ -371,93 +369,98 @@ CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 # limitations under the License.
 #
 
-# Handle kernel CFLAGS
+# Handle kernel CC flags by importing vendor/sm strings
+ifdef SM_KERNEL_NAME
+  USE_GCC = $(CROSS_COMPILE_NAME)gcc-$(SM_KERNEL_NAME)
+  CC = $(USE_GCC)
+else
+  CC = $(CROSS_COMPILE)gcc
+endif
 
 # Highest level of basic gcc optimizations if enabled
-# This reads a imported string from the sabermod modified android build system
-ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
-SABERMOD_KERNEL_CFLAGS	:= -O3
-endif
-
-ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
-    # Extra flags imported from the sabermod modified android build system
-    # This will not accually do anything unless these strings are defined
-    ifdef SABERMOD_KERNEL_CFLAGS
-        ifdef EXTRA_SABERMOD_GCC_VECTORIZE_CFLAGS
-        SABERMOD_KERNEL_CFLAGS	+= $(EXTRA_SABERMOD_GCC_VECTORIZE_CFLAGS)
-        endif
-        ifdef EXTRA_SABERMOD_GCC_O3_CFLAGS
-        SABERMOD_KERNEL_CFLAGS += $(EXTRA_SABERMOD_GCC_O3_CFLAGS)
-        endif
-    else
-        ifdef EXTRA_SABERMOD_GCC_VECTORIZE_CFLAGS
-        SABERMOD_KERNEL_CFLAGS	:= $(EXTRA_SABERMOD_GCC_VECTORIZE_CFLAGS)
-        endif
-        ifdef EXTRA_SABERMOD_GCC_O3_CFLAGS
-        SABERMOD_KERNEL_CFLAGS := $(EXTRA_SABERMOD_GCC_O3_CFLAGS)
-        endif
-    endif
-endif
-
-ifdef SABERMOD_KERNEL_CFLAGS
-    ifdef kernel_arch_variant_cflags
-    SABERMOD_KERNEL_CFLAGS	+= $(kernel_arch_variant_cflags)
-    endif
+ifeq ($(strip $(LOCAL_O3)),true)
+  SABERMOD_KERNEL_FLAGS	:= -O3
 else
-    ifdef kernel_arch_variant_cflags
-    SABERMOD_KERNEL_CFLAGS	:= $(kernel_arch_variant_cflags)
-    endif
+  SABERMOD_KERNEL_FLAGS := -O2
+endif
+
+# Extra flags
+ifdef SABERMOD_KERNEL_FLAGS
+  ifdef EXTRA_SABERMOD_GCC_VECTORIZE
+    SABERMOD_KERNEL_FLAGS += $(EXTRA_SABERMOD_GCC_VECTORIZE)
+  endif
+  ifdef EXTRA_SABERMOD_GCC
+    SABERMOD_KERNEL_FLAGS += $(EXTRA_SABERMOD_GCC)
+  endif
+else
+  ifdef EXTRA_SABERMOD_GCC_VECTORIZE
+    SABERMOD_KERNEL_FLAGS := $(EXTRA_SABERMOD_GCC_VECTORIZE)
+  endif
+  ifdef EXTRA_SABERMOD_GCC
+    SABERMOD_KERNEL_FLAGS := $(EXTRA_SABERMOD_GCC)
+  endif
+endif
+
+ifdef SABERMOD_KERNEL_FLAGS
+  ifdef kernel_arch_variant_cflags
+    SABERMOD_KERNEL_FLAGS += $(kernel_arch_variant_cflags)
+  endif
+else
+  ifdef kernel_arch_variant_cflags
+    SABERMOD_KERNEL_FLAGS := $(kernel_arch_variant_cflags)
+  endif
 endif
 
 # Strict aliasing for mako if enabled in the defconfig
 ifeq ($(strip $(CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING)),y)
-    ifdef SABERMOD_KERNEL_CFLAGS
-    SABERMOD_KERNEL_CFLAGS	+= $(KERNEL_STRICT_FLAGS)
-    else
-    SABERMOD_KERNEL_CFLAGS	:= $(KERNEL_STRICT_FLAGS)
-    endif
+  ifdef SABERMOD_KERNEL_FLAGS
+    SABERMOD_KERNEL_FLAGS += $(KERNEL_STRICT_FLAGS)
+  else
+    SABERMOD_KERNEL_FLAGS := $(KERNEL_STRICT_FLAGS)
+  endif
 endif
 
 # Memory leak detector sanitizer
-ifdef SABERMOD_KERNEL_CFLAGS
-SABERMOD_KERNEL_CFLAGS += -fsanitize=leak
+ifdef SABERMOD_KERNEL_FLAGS
+  SABERMOD_KERNEL_FLAGS += -fsanitize=leak
 else
-SABERMOD_KERNEL_CFLAGS := -fsanitize=leak
+  SABERMOD_KERNEL_FLAGS := -fsanitize=leak
 endif
 
-ifeq ($(strip $(O3_OPTIMIZATIONS)),true)
-    ifdef SABERMOD_KERNEL_CFLAGS
-        ifdef GRAPHITE_KERNEL_FLAGS
-        SABERMOD_KERNEL_CFLAGS	+= $(GRAPHITE_KERNEL_FLAGS)
-            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_CFLAGS)),)
-            SABERMOD_KERNEL_CFLAGS += \
-              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-              -lgomp -lgcc
-            LD += \
-              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-              -lgomp -lgcc
-            endif
-        endif
-    else
-        ifdef GRAPHITE_KERNEL_FLAGS
-        SABERMOD_KERNEL_CFLAGS	:= $(GRAPHITE_KERNEL_FLAGS)
-            ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_CFLAGS)),)
-            SABERMOD_KERNEL_CFLAGS += \
-              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-              -lgomp -lgcc
-            LD += \
-              -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-              -lgomp -lgcc
-            endif
-        endif
+ifdef SABERMOD_KERNEL_FLAGS
+  ifdef GRAPHITE_KERNEL_FLAGS
+    SABERMOD_KERNEL_FLAGS += $(GRAPHITE_KERNEL_FLAGS)
+    ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
+      SABERMOD_KERNEL_FLAGS += \
+        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+        -lgomp -ldl -lgcc
+
+      LD += \
+        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+        -lgomp -ldl -lgcc
     endif
+  endif
+else
+  ifdef GRAPHITE_KERNEL_FLAGS
+    SABERMOD_KERNEL_FLAGS := $(GRAPHITE_KERNEL_FLAGS)
+    ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
+      SABERMOD_KERNEL_FLAGS += \
+        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+        -lgomp -ldl -lgcc
+      LD += \
+        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+        -lgomp -ldl -lgcc
+    endif
+  endif
 endif
 
 # Add everything to CC at the end
-ifdef SABERMOD_KERNEL_CFLAGS
-CC	+= $(SABERMOD_KERNEL_CFLAGS) -marm
+ifdef SABERMOD_KERNEL_FLAGS
+  CC += $(SABERMOD_KERNEL_FLAGS) -marm
 endif
 # end The SaberMod Project additions
+
+CPP = $(CC) -E
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -665,12 +668,12 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-ifneq ($(strip $(O3_OPTIMIZATIONS)),true)
-    ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-    KBUILD_CFLAGS	+= -Os
-    else
-    KBUILD_CFLAGS	+= -O2
-    endif
+ifneq ($(strip $(LOCAL_O3)),true)
+  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+    KBUILD_CFLAGS += -Os
+  else
+    KBUILD_CFLAGS += -O2
+  endif
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
