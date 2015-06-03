@@ -125,3 +125,34 @@ obj-$(CONFIG_IP_VS) += ipvs/
 ifdef CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING
 CFLAGS_KERNEL := -fno-strict-aliasing
 endif
+
+ifdef SM_KERNEL_NAME
+  ifneq ($(filter 5.1% 6.0%,$(SM_KERNEL_NAME)),)
+    CFLAGS_nf_conntrack_core.o := \
+      -fno-graphite \
+      -fno-graphite-identity \
+      -fno-loop-flatten \
+      -fno-tree-loop-linear \
+      -fno-loop-interchange \
+      -fno-loop-strip-mine \
+      -fno-loop-block \
+      -fno-loop-nest-optimize \
+      -fno-loop-unroll-and-jam \
+      -fno-loop-parallelize-all \
+      -ftree-parallelize-loops=0 \
+      -fno-openmp
+    CFLAGS_xt_hashlimit.o := \
+      -fno-graphite \
+      -fno-graphite-identity \
+      -fno-loop-flatten \
+      -fno-tree-loop-linear \
+      -fno-loop-interchange \
+      -fno-loop-strip-mine \
+      -fno-loop-block \
+      -fno-loop-nest-optimize \
+      -fno-loop-unroll-and-jam \
+      -fno-loop-parallelize-all \
+      -ftree-parallelize-loops=0 \
+      -fno-openmp
+  endif
+endif
