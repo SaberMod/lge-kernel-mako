@@ -437,7 +437,7 @@ ifdef SABERMOD_KERNEL_FLAGS
 
       LD += \
         -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -ldl -lgcc
+        -lgomp -lgcc
     endif
   endif
 else
@@ -449,7 +449,7 @@ else
         -lgomp -ldl -lgcc
       LD += \
         -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -ldl -lgcc
+        -lgomp -lgcc
     endif
   endif
 endif
