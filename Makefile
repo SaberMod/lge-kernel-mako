@@ -433,10 +433,6 @@ ifdef SABERMOD_KERNEL_FLAGS
     ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
       SABERMOD_KERNEL_FLAGS += \
         -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -ldl -lgcc
-
-      LD += \
-        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
         -lgomp -lgcc
     endif
   endif
