@@ -427,33 +427,17 @@ else
   SABERMOD_KERNEL_FLAGS := -fsanitize=leak
 endif
 
-ifdef SABERMOD_KERNEL_FLAGS
-  ifdef GRAPHITE_KERNEL_FLAGS
-    SABERMOD_KERNEL_FLAGS += $(GRAPHITE_KERNEL_FLAGS)
-    ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
-      SABERMOD_KERNEL_FLAGS += \
-        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -lgcc
-    endif
-  endif
-else
-  ifdef GRAPHITE_KERNEL_FLAGS
-    SABERMOD_KERNEL_FLAGS := $(GRAPHITE_KERNEL_FLAGS)
-    ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
-      SABERMOD_KERNEL_FLAGS += \
-        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -ldl -lgcc
-      LD += \
-        -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
-        -lgomp -lgcc
-    endif
+ifdef GRAPHITE_KERNEL_FLAGS
+  SABERMOD_KERNEL_FLAGS += $(GRAPHITE_KERNEL_FLAGS)
+  ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
+    SABERMOD_KERNEL_FLAGS += \
+      -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
+      -lgomp -lgcc
   endif
 endif
 
 # Add everything to CC at the end
-ifdef SABERMOD_KERNEL_FLAGS
-  CC += $(SABERMOD_KERNEL_FLAGS) -marm
-endif
+CC += $(SABERMOD_KERNEL_FLAGS) -marm
 # end The SaberMod Project additions
 
 CPP = $(CC) -E
