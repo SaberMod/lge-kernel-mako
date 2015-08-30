@@ -420,11 +420,13 @@ ifeq ($(strip $(CONFIG_MACH_MSM8960_MAKO_STRICT_ALIASING)),y)
   endif
 endif
 
-# Memory leak detector sanitizer
-ifdef SABERMOD_KERNEL_FLAGS
-  SABERMOD_KERNEL_FLAGS += -fsanitize=leak
-else
-  SABERMOD_KERNEL_FLAGS := -fsanitize=leak
+ifeq (,$(filter 4.8%,$(SM_KERNEL_NAME)))
+  # Memory leak detector sanitizer
+  ifdef SABERMOD_KERNEL_FLAGS
+    SABERMOD_KERNEL_FLAGS += -fsanitize=leak
+  else
+    SABERMOD_KERNEL_FLAGS := -fsanitize=leak
+  endif
 endif
 
 ifdef GRAPHITE_KERNEL_FLAGS
