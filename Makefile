@@ -429,17 +429,32 @@ ifeq (,$(filter 4.8%,$(SM_KERNEL_NAME)))
   endif
 endif
 
+ifeq (arm,$(strip $(ARCH)))
+  ifdef SABERMOD_KERNEL_FLAGS
+    SABERMOD_KERNEL_FLAGS += -marm
+  else
+    SABERMOD_KERNEL_FLAGS := -marm
+endif
+
+ifdef SM_KERNEL_NAME
+  export LD_LIBRARY_PATH=$(TARGET_ARCH_KERNEL_LIB_PATH);
+  export LIBRARY_PATH=$(TARGET_ARCH_KERNEL_LIB_PATH);
+  export C_INCLUDE_PATH=$(TARGET_ARCH_KERNEL_INC_PATH);
+endif
+
 ifdef GRAPHITE_KERNEL_FLAGS
   SABERMOD_KERNEL_FLAGS += $(GRAPHITE_KERNEL_FLAGS)
   ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
     SABERMOD_KERNEL_FLAGS += \
-      -L $(TARGET_ARCH_LIB_PATH)/gcc/arm-linux-androideabi/$(TARGET_SM_AND).x-sabermod/armv7-a \
       -lgomp -lgcc
   endif
 endif
 
 # Add everything to CC at the end
-CC += $(SABERMOD_KERNEL_FLAGS) -marm
+ifdef SABERMOD_KERNEL_FLAGS
+  CC += $(SABERMOD_KERNEL_FLAGS)
+endif
+
 # end The SaberMod Project additions
 
 CPP = $(CC) -E
