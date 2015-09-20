@@ -434,6 +434,7 @@ ifeq (arm,$(strip $(ARCH)))
     SABERMOD_KERNEL_FLAGS += -marm
   else
     SABERMOD_KERNEL_FLAGS := -marm
+  endif
 endif
 
 ifdef SM_KERNEL_NAME
