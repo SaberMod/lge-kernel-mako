@@ -55,7 +55,7 @@
 #include "cfgPriv.h"
 #include "cfgDebug.h"
 #include "wlan_qct_wda.h"
-
+#include <omp.h>
 
 /*--------------------------------------------------------------------*/
 /* Static function prototypes                                         */

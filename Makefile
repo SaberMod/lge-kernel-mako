@@ -445,9 +445,17 @@ endif
 
 ifdef GRAPHITE_KERNEL_FLAGS
   SABERMOD_KERNEL_FLAGS += $(GRAPHITE_KERNEL_FLAGS)
+  LDFLAGS += $(GRAPHITE_KERNEL_FLAGS)
   ifneq ($(filter -floop-parallelize-all -ftree-parallelize-loops=% -fopenmp,$(SABERMOD_KERNEL_FLAGS)),)
     SABERMOD_KERNEL_FLAGS += \
+      -I $(TARGET_ARCH_KERNEL_INC_PATH) \
+      -L $(TARGET_ARCH_KERNEL_LIB_PATH) \
       -lgomp -lgcc
+
+    LDFLAGS += \
+      -I $(TARGET_ARCH_KERNEL_INC_PATH) \
+      -L $(TARGET_ARCH_KERNEL_LIB_PATH) \
+      -lgomp
   endif
 endif
 
